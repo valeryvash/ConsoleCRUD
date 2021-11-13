@@ -1,4 +1,4 @@
-#Task
+ #Task
 
 Need to realize a console **_CRUD_** app, which contains the next entities:
 ```java
@@ -32,7 +32,7 @@ class GsonWriterRepositoryImpl implements WriterRepository
 Task result shall be a separate repository with a README.md file, which contains:
 
  - [x] a task description,
- - [ ] a project
+ - [ ] a project (in progress)
  - [ ] and instruction for the app run with console.
 
 **_[Gson library](https://mvnrepository.com/artifact/com.google.code.gson/gson/2.8.5)_** shall be used for work with **_JSON_**.  
