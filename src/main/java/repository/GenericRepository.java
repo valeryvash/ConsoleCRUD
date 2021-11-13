@@ -4,14 +4,16 @@ import java.util.stream.Stream;
 
 public interface GenericRepository<T,ID> {
 
-    public Stream<T> readFromFile();
+    Stream<T> readFromFile();
 
     void writeToFile(Stream<T> incomingStream);
 
+    void add(T object);
+
     T getById(ID id);
 
-    void setById(T object);
+    void update(T object);
 
-    ID getId(T type);
+    void delete(T object);
 
 }
