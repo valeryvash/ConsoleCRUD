@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import model.Post;
-import model.Tag;
 import model.Writer;
 
 import java.io.*;
@@ -15,41 +14,45 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GsonWriterRepositoryImpl {
+import static java.util.stream.Stream.concat;
 
-    private static final String writerFilePath = "src/main/java/ignoredPackage/filesDataBase/" + "writers.json";
+public class GsonWriterRepositoryImpl implements WriterRepository{
 
-    private static final File writersFile = new File(writerFilePath);
+    private static final String fileName = "writers.json";
+
+    private static final String workFolderPath = "src/main/java/ignoredPackage/filesDataBase/";
+
+    private static final File file = new File(workFolderPath + fileName);
 
     // Need for return Generic type from string.
     // Always check that this link shall call the 'getType()' method
     private static final Type listTypeToken = new TypeToken<List<Writer>>(){}.getType();
-
-    public static Stream<Writer> readFromFile(){
+    @Override
+    public Stream<Writer> readFromFile(File file,Type token){
         Stream<Writer> resultStream = Stream.empty();
 
-        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(writersFile))) {
-            List<Writer> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), listTypeToken);
+        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(file))) {
+            List<Writer> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), token);
             resultStream = buffer.stream();
         } catch (FileNotFoundException exception) {
-            System.err.println("'writers.json' not found in the next location:\n" +
-                    writerFilePath);
+            System.err.println(file.getName() + " not found in the next location:\n" +
+                    file.getPath());
             exception.printStackTrace();
         } catch (IOException exception) {
-            System.err.println("'IOException' during 'writers.json' read in the next location:\n" +
-                    writerFilePath);
+            System.err.println("'IOException' during" + file.getName() + " read in the next location:\n" +
+                    file.getPath());
             exception.printStackTrace();
         } catch (JsonSyntaxException exception) {
-            System.err.println("'JsonSyntaxException' during 'writers.json' read in the next location:\n" +
-                    writerFilePath);
+            System.err.println("'JsonSyntaxException' during" + file.getName() + " read in the next location:\n" +
+                    file.getPath());
             exception.printStackTrace();
         }
         return resultStream;
     }
-
-    public static void writeToFile(Stream<Writer> incomingWriterStream) {
-        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(writersFile))) {
-            List<Writer> buffer = incomingWriterStream.collect(Collectors.toList());
+    @Override
+    public void writeToFile(Stream<Writer> incomingStream, File file){
+        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(file))) {
+            List<Writer> buffer = incomingStream.collect(Collectors.toList());
             gsonBufferedWriter
                     .write(
                             new Gson()
@@ -57,77 +60,130 @@ public class GsonWriterRepositoryImpl {
                     );
         } catch (FileNotFoundException exception) {
             exception.printStackTrace();
-            System.err.println("'FileNotFoundException' during 'tags.json' write in the next location:\n" +
-                    writerFilePath);
-            System.err.println("'tag.json' 'writeToFile()' method returns: " + writersFile.canWrite());
+            System.err.println("'FileNotFoundException' during" + file.getName() + " write in the next location:\n" +
+                    file.getPath());
+            System.err.println(file.getName() +" 'writeToFile()' method returns: " + file.canWrite());
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("'IOException' during 'tags.json' write in the next location:\n" +
-                    writerFilePath);
+            System.err.println("'IOException' during "+ file.getName() + "write in the next location:\n" +
+                    file.getPath());
+        }
+    };
+
+    @Override
+    public Stream<Writer> readDefaultStream() {
+        return readFromFile(file,listTypeToken);
+    }
+
+    @Override
+    public void writeDefaultStream(Stream<Writer> stream) {
+        writeToFile(stream,file);
+    }
+
+    @Override
+    public void add(Writer newWriter) {
+        if (!contains(newWriter.getId())){
+            writeDefaultStream(
+                    concat(readDefaultStream(),Stream.of(newWriter))
+            );
         }
     }
 
-    public static Optional<Writer> getWriterById(long id) {
-        return readFromFile()
+    @Override
+    public Writer getById(Long id) {
+        Optional<Writer> temp =
+                readDefaultStream()
                 .filter(writer -> writer.getId() == id)
                 .findAny();
-    }
-
-    public static Optional<Writer> getWriterByName(String writerName) {
-        return readFromFile()
-                .filter(writer -> writer.getName().equalsIgnoreCase(writerName))
-                .findAny();
-    }
-
-    public static Optional<Writer> getMaxWriterId() {
-        return readFromFile()
-                .max((a, b) -> ((int) (a.getId() - b.getId())));
-    }
-
-
-    public static long addWriterByName(String proposedWriterName){
-        long resultId = 0L;
-        writersFile.setWritable(false);
-        Optional<Writer> temp = getWriterByName(proposedWriterName);
-        if (temp.isPresent()){
-            resultId = temp.get().getId();
-            writersFile.setWritable(true);
-        } else {
-            if ((temp = getMaxWriterId()).isPresent()) {
-                resultId = temp.get().getId() + 1L;
-            }
-            List<Writer> tempList = readFromFile().collect(Collectors.toList());
-            tempList.add(new Writer(resultId, proposedWriterName,new ArrayList<Post>()));
-            writersFile.setWritable(true);
-            writeToFile(tempList.stream());
+        if (temp.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Object with id: " + id + " is absent in " + file.getName() + " in work folder " + file.getPath()+
+                    "\nAlways check object availability with 'contains()' method before getMethod usage."
+                    );
         }
-        return resultId;
+        return temp.get();
+    }
+    @Override
+    public void update(Writer objectToUpdate) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map( iteratedObject -> {
+                            if (iteratedObject.getId() == objectToUpdate.getId()){
+                                return objectToUpdate;
+                            } else {
+                                return iteratedObject;
+                            }
+                        })
+        );
+    }
+    @Override
+    public void delete(Long id) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .filter(
+                                iterableObject -> iterableObject.getId() != id
+                        )
+        );
     }
 
-    public static void updateWriter(Writer targetWriter){
-           writeToFile(readFromFile().map( n -> {
-                if(n.getId() == targetWriter.getId()) {
-                    return new Writer(targetWriter);
-                } else {
-                    return n;
-                }
-            }));
+    @Override
+    public boolean contains(Long id) {
+        return readDefaultStream()
+                .anyMatch(iterableObject -> iterableObject.getId() == id);
+    }
+
+    @Override
+    public Writer getByName(String writerName) {
+        Optional<Writer> temp =
+                readDefaultStream()
+                        .filter(writer -> writer.getName().equalsIgnoreCase(writerName))
+                        .findAny();
+        if (temp.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Object with name: " + writerName + " is absent in " + file.getName() +
+                            " in work folder " + file.getPath()+
+                            "\nAlways check object availability with 'contains()' " +
+                            "method before getMethod usage.");
+        }
+        return temp.get();
+    }
+
+    @Override
+    public boolean contain(String writerName) {
+        return readDefaultStream()
+                .anyMatch(iterableObject -> iterableObject.getName().equalsIgnoreCase(writerName));
+    }
+
+    @Override
+    public Stream<Post> getWriterPosts(Long writerId) {
+        return getById(writerId).getPosts().stream();
     }
 
     // class tests
     public static void main(String[] args) {
 
-        System.out.println("Read from stream from file:");
-        readFromFile().forEach(System.out::println);
+        GsonWriterRepositoryImpl gwr = new GsonWriterRepositoryImpl();
+        // display all entities in console screen
+        gwr.displayAll();
 
-        writeToFile(readFromFile().filter(n -> n.getId() != 2));
+        // create
+        gwr.add(new Writer(4L, "Lev Tolstoy", new ArrayList<>()));
+        gwr.displayAll();
 
-        System.out.println("Read from stream from file:");
-        readFromFile().forEach(System.out::println);
+        //read
+        System.out.println("'getById' method call \n "  + gwr.getById(4L));
 
-        addWriterByName("Sergey Mikhalkov");
+        // update
+        gwr.update(new Writer(4L, "Alexey Tolstoy", new ArrayList<>()));
+        gwr.displayAll();
 
-        System.out.println("Read from stream from file:");
-        readFromFile().forEach(System.out::println);
+        // delete
+        gwr.delete(4L);
+        gwr.displayAll();
+    }
+
+    void displayAll() {
+        System.out.println("Display entire collection");
+        readDefaultStream().forEach(System.out::println);
     }
 }

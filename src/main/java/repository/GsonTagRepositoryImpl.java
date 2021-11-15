@@ -3,7 +3,9 @@ package repository;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import model.Post;
 import model.Tag;
+import model.Writer;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -14,41 +16,45 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class GsonTagRepositoryImpl {
+import static java.util.stream.Stream.concat;
 
-    private static final String tagsFilePath = "src/main/java/ignoredPackage/filesDataBase/" + "tags.json";
+public class GsonTagRepositoryImpl implements TagRepository{
 
-    private static final File tagsFile = new File(tagsFilePath);
+    private static final String fileName = "tags.json";
+
+    private static final String workFolderPath = "src/main/java/ignoredPackage/filesDataBase/";
+
+    private static final File file = new File(workFolderPath + fileName);
 
     // Need for return Generic type from string.
     // Always check that this link shall call the 'getType()' method
     private static final Type listTypeToken = new TypeToken<List<Tag>>(){}.getType();
 
-    public static Stream<Tag> readFromFile() {
-        Stream<Tag> result = Stream.empty();
+     public Stream<Tag> readFromFile(File toReadFrom, Type token) {
+        Stream<Tag> resultStream = Stream.empty();
 
-        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(tagsFile))) {
-            List<Tag> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), listTypeToken);
-            result = buffer.stream();
+        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(toReadFrom))) {
+            List<Tag> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), token);
+            resultStream = buffer.stream();
         } catch (FileNotFoundException exception) {
-            System.err.println("'tags.json' not found in the next location:\n" +
-                    tagsFilePath);
+            System.err.println(toReadFrom.getName() + " not found in the next location:\n" +
+                    toReadFrom.getPath());
             exception.printStackTrace();
         } catch (IOException exception) {
-            System.err.println("'IOException' during 'tags.json' read in the next location:\n" +
-                    tagsFilePath);
+            System.err.println("'IOException' during " + toReadFrom.getName() + " read in the next location:\n" +
+                    toReadFrom.getPath());
             exception.printStackTrace();
         } catch (JsonSyntaxException exception) {
-            System.err.println("'JsonSyntaxException' during 'tags.json' read in the next location:\n" +
-                    tagsFilePath);
+            System.err.println("'JsonSyntaxException' during "+ toReadFrom.getName() +" read in the next location:\n" +
+                    toReadFrom.getPath());
+            System.err.println("Check file " + toReadFrom.getName() + " content please");
             exception.printStackTrace();
         }
-
-        return result;
+        return resultStream;
     }
 
-    public static void writeToFile(Stream<Tag> incomingTagStream) {
-        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(tagsFilePath))) {
+    public void writeToFile(Stream<Tag> incomingTagStream, File file) {
+        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(file))) {
             List<Tag> buffer = incomingTagStream.collect(Collectors.toList());
             gsonBufferedWriter
                     .write(
@@ -58,134 +64,104 @@ public class GsonTagRepositoryImpl {
 
         } catch (FileNotFoundException exception) {
             exception.printStackTrace();
-            System.err.println("'FileNotFoundException' during 'tags.json' write in the next location:\n" +
-                    tagsFilePath);
-            System.err.println("'tag.json' 'writeToFile()' method returns: " + tagsFile.canWrite());
+            System.err.println("'FileNotFoundException' during "+file.getName()+" write in the next location:\n" +
+                    file.getPath());
+            System.err.println(file.getName() + " 'writeToFile()' method returns: " + file.canWrite());
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("'IOException' during 'tags.json' write in the next location:\n" +
-                    tagsFilePath);
+            System.err.println("'IOException' during "+file.getName()+" write in the next location:\n" +
+                    file.getPath());
         }
     }
 
-    public static Optional<Tag> getMaxTagId() {
-        return readFromFile()
-                .max((a, b) -> ((int) (a.getId() - b.getId())));
+    @Override
+    public Stream<Tag> readDefaultStream() {
+        return readFromFile(file,listTypeToken);
     }
 
-    /**
-     * Method add new Tag in the 'tags.json' file by name and return it id.
-     * If such tag already exist, return id of existing tag.
-     * Blocks file for write till method end
-     */
+    @Override
+    public void writeDefaultStream(Stream<Tag> stream) {
+        writeToFile(stream,file);
+    }
 
-    public static long addTagByName(String proposedTagName){
-        long resultId = 0L;
-        tagsFile.setWritable(false);
-        Optional<Tag> temp = getTagByName(proposedTagName);
-        if (temp.isPresent()){
-            resultId = temp.get().getId();
-            tagsFile.setWritable(true);
-        } else {
-            if ((temp = getMaxTagId()).isPresent()) {
-                resultId = temp.get().getId() + 1L;
-            }
-            List<Tag> tempList = readFromFile().collect(Collectors.toList());
-            tempList.add(new Tag(resultId, proposedTagName));
-            tagsFile.setWritable(true);
-            writeToFile(tempList.stream());
+    @Override
+    public void add(Tag newWriter) {
+        if (!contains(newWriter.getId())){
+            writeDefaultStream(
+                    concat(readDefaultStream(),Stream.of(newWriter))
+            );
         }
-        return resultId;
     }
 
-    /**
-     *  Return Tag from json file
-     */
-    public static Optional<Tag> getTagById(long id){
-        return readFromFile()
-                .filter(tag -> tag.getId() == id)
-                .findAny();
-    }
-
-    /**
-     *  Return Tag from json file
-     */
-    public static Optional<Tag> getTagByName(String tagName) {
-        return readFromFile()
-                .filter(tag -> tag.getName().equals(tagName))
-                .findAny();
-    }
-
-    /**
-     *  Update Tag in json file, if such Tag already presented.
-     *  Method block 'tags.json' file till the method end.
-     */
-    public static boolean updateTag(Optional<Tag> targetTag, String newTagName){
-        boolean methodResult = false;
-        tagsFile.setWritable(false);
-        if (targetTag.isPresent()) {
-            Tag tempTag = targetTag.get();
-            List<Tag> tempList = readFromFile().filter(n -> n.getId() != tempTag.getId()).collect(Collectors.toList());
-            tempList.add(new Tag(tempTag.getId(), newTagName));
-            tagsFile.setWritable(true);
-            writeToFile(tempList.stream());
-            methodResult = true;
+    @Override
+    public Tag getById(Long id) {
+        Optional<Tag> temp =
+                readDefaultStream()
+                        .filter(writer -> writer.getId() == id)
+                        .findAny();
+        if (temp.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Object with id: " + id + " is absent in " + file.getName() + " in work folder " + file.getPath()+
+                            "\nAlways check object availability with 'contains()' method before getMethod usage."
+            );
         }
-        tagsFile.setWritable(true);
-        return methodResult;
+        return temp.get();
+    }
+    @Override
+    public void update(Tag objectToUpdate) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map( iteratedObject -> {
+                            if (iteratedObject.getId() == objectToUpdate.getId()){
+                                return objectToUpdate;
+                            } else {
+                                return iteratedObject;
+                            }
+                        })
+        );
+    }
+    @Override
+    public void delete(Long id) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .filter(
+                                iterableObject -> iterableObject.getId() != id
+                        )
+        );
     }
 
-    /**
-     *  Delete Tag from json file
-     *  return true if tag deleted and false in case of Tag absence
-     */
-    public static boolean deleteTag(Optional<Tag> targetTag){
-        boolean methodResult = false;
-        if (targetTag.isPresent()) {
-            writeToFile(readFromFile().filter(tag -> tag.getId() != targetTag.get().getId()));
-            methodResult = true;
-        }
-        return methodResult;
+    @Override
+    public boolean contains(Long id) {
+        return readDefaultStream()
+                .anyMatch(iterableObject -> iterableObject.getId() == id);
     }
 
-    // class methods tests
+
+     // class methods tests
     public static void main(String[] args) {
 
-        System.out.println("getInnerTagsListStream() method test");
-        readFromFile().forEach(System.out::println);
+        GsonTagRepositoryImpl gtr = new GsonTagRepositoryImpl();
+        // display all entities in console screen
+        gtr.displayAll();
 
-        System.out.println("Add tag in file test");
-        System.out.println("Tag id is : " + addTagByName("555"));
+        // create
+        gtr.add(new Tag(5L, "Games"));
+        gtr.displayAll();
 
-        System.out.println("getInnerTagsListStream() method test");
-        readFromFile().forEach(System.out::println);
+        // read
+        System.out.println("'getById' method call \n" + gtr.getById(5L));
 
-        System.out.print("Update '555' tag name by '999' result is ");
-        System.out.println(updateTag(getTagByName("555"),"999"));
+        // update
+        gtr.update(new Tag(5L, "VideoGames"));
+        gtr.displayAll();
 
-        System.out.print("Update '555' tag name by '999' result is ");
-        System.out.println(updateTag(getTagByName("555"),"999"));
+        // delete
+        gtr.delete(5L);
+        gtr.displayAll();
+    }
 
-        System.out.println("getInnerTagsListStream() method test");
-        readFromFile().forEach(System.out::println);
-
-        Consumer<Optional<Tag>> displayTag = n -> {
-            if (n.isPresent()) {
-                System.out.println(n.get());
-            } else {
-                System.out.println("'tag.json' doesn't contain such item");
-            }
-        };
-
-        System.out.println("getTagById() method test");
-        IntStream.range(0,10).forEach(n -> displayTag.accept(getTagById(n)));
-
-        System.out.println("getTagByName() method test");
-        Stream.of("dogs", "cats","JamesBaxter","JakeTheDog","Rock", "IT")
-                .forEach(n-> displayTag.accept(getTagByName(n)));
-
-        System.out.println("deleteTagById() method test");
-        IntStream.range(5,10).forEach(n -> deleteTag(getTagById(n)));
-
+    void displayAll() {
+        System.out.println("Display entire collection");
+        readDefaultStream().forEach(System.out::println);
     }
 }

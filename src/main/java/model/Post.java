@@ -47,14 +47,19 @@ public class Post {
         setStatus(status);
     }
 
+    public Post(Post post) {
+        setId(post.getId());
+        setContent(post.getContent());
+        setTags(post.getTags());
+        setStatus(post.getStatus());
+    }
+
     private Post(){}
 
     @Override
     public String toString() {
-        return "===Post===\n" +
-                "\t id \t" + getId() + "\n" +
-                "\t status \t" + getStatus().toString() + "\n"+
-                "\t content \t" + getContent() + "\n"+
-                "==============\n\n ";
+        return "Post [id: " + getId() +", status: " + getStatus().toString() + "\n"+
+                "content:\n" + getContent() +
+                "\ntags:" + tags.toString() + ']';
     }
 }

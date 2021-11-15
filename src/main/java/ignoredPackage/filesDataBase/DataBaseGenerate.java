@@ -3,6 +3,7 @@ package ignoredPackage.filesDataBase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import model.Post;
+import model.PostStatus;
 import model.Tag;
 import model.Writer;
 
@@ -24,11 +25,13 @@ public class DataBaseGenerate {
 
     static List<Tag> tagsToGson;
     static List<Writer> writesToGson;
+    static List<Post> postsToGson;
 
     static String jsonString = "";
 
     private static final Type tagsTypeToken = new TypeToken<List<Tag>>() {}.getType();
     private static final Type writersTypeToken = new TypeToken<List<Writer>>() {}.getType();
+    private static final Type postsTypeToken = new TypeToken<List<Writer>>() {}.getType();
 
     static <T> void collectionToFile(List<T> incomingCollection, String fileName){
         try (FileOutputStream gsonOutputStream = new FileOutputStream(workFolderPath + fileName))
@@ -68,8 +71,46 @@ public class DataBaseGenerate {
         collectionToFile(writesToGson, "writers.json");
     }
 
+    public static void defaultJsonPostsFileGenerate()
+    {
+        postsToGson = new ArrayList<Post>();
+
+        postsToGson.add(
+                new Post(
+                        1L,
+                        "How dy world!",
+                        List.of(new Tag (1L,"cat"),new Tag(3L,"IT")),
+                        PostStatus.ACTIVE
+                )
+        );
+
+        postsToGson.add(
+                new Post(
+                        2L,
+                        "Jaaaaames Baxteeeer",
+                        List.of(new Tag (4L,"JamesBaxter")),
+                        PostStatus.ACTIVE
+                )
+        );
+
+        postsToGson.add(
+                new Post(
+                        3L,
+                        "sdfgsdfgsdfg",
+                        new ArrayList<Tag>(),
+                        PostStatus.DELETED
+                )
+        );
+
+        jsonString = new Gson().toJson(postsToGson);
+
+        collectionToFile(postsToGson,"posts.json");
+
+    }
+
     public static void main(String[] args) {
 //        defaultJsonTagFileGenerate();
-        defaultJsonWriterFileGenerate();
+//        defaultJsonWriterFileGenerate();
+        defaultJsonPostsFileGenerate();
     }
 }
