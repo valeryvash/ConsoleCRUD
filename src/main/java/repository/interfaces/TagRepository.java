@@ -1,17 +1,10 @@
-package repository;
+package repository.interfaces;
 
 import model.Tag;
 
-import java.io.File;
-import java.lang.reflect.Type;
 import java.util.stream.Stream;
 
 public interface TagRepository extends GenericRepository<Tag,Long>{
-    @Override
-    Stream<Tag> readFromFile(File toReadFrom, Type token);
-
-    @Override
-    void writeToFile(Stream<Tag> incomingTagStream, File toWriteToFile);
 
     @Override
     Stream<Tag> readDefaultStream();
@@ -20,7 +13,13 @@ public interface TagRepository extends GenericRepository<Tag,Long>{
     void writeDefaultStream(Stream<Tag> stream);
 
     @Override
+    Long getFreeId();
+
+    @Override
     void add(Tag p);
+
+    @Override
+    Long add(String subject);
 
     @Override
     Tag getById(Long aLong);
@@ -33,4 +32,6 @@ public interface TagRepository extends GenericRepository<Tag,Long>{
 
     @Override
     boolean contains(Long aLong);
+
+    boolean contains(String tagName);
 }

@@ -1,8 +1,11 @@
 package model;
 
-import java.util.List;
+import model.interfaces.Entity;
 
-public class Writer {
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class Writer implements Entity {
     private long id;
     private String name;
     private List<Post> posts;
@@ -50,5 +53,25 @@ public class Writer {
         return "Writer [id: " + getId() +
                 ", name: " + getName() +
                 ", posts amount: " + posts.size() + "]";
+    }
+
+    public boolean contains(Tag t1){
+        return getPosts()
+                .stream()
+                .anyMatch(w1 -> w1.contain(t1));
+    }
+
+    public void update(Tag t1) {
+        setPosts(
+                getPosts()
+                        .stream()
+                        .map(p1 ->{
+                            if (p1.contain(t1)) {
+                                p1.update(t1);
+                            }
+                            return p1;
+                        })
+                        .collect(Collectors.toList())
+        );
     }
 }

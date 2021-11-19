@@ -1,19 +1,12 @@
-package repository;
+package repository.interfaces;
 
 import model.Post;
 import model.PostStatus;
 import model.Tag;
 
-import java.io.*;
-import java.lang.reflect.Type;
 import java.util.stream.Stream;
 
 public interface PostRepository extends GenericRepository<Post,Long>{
-     @Override
-     Stream<Post> readFromFile(File toReadFrom, Type token);
-
-     @Override
-     void writeToFile(Stream<Post> incomingTagStream, File toWriteToFile);
 
      @Override
      Stream<Post> readDefaultStream();
@@ -22,7 +15,13 @@ public interface PostRepository extends GenericRepository<Post,Long>{
      void writeDefaultStream(Stream<Post> stream);
 
      @Override
+     Long getFreeId();
+
+     @Override
      void add(Post p);
+
+     @Override
+     Long add(String content);
 
      @Override
      Post getById(Long id);

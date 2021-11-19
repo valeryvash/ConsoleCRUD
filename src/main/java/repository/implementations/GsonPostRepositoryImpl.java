@@ -1,18 +1,17 @@
-package repository;
+package repository.implementations;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import model.Post;
 import model.PostStatus;
 import model.Tag;
-import model.Writer;
+import repository.interfaces.PostRepository;
+import repository.jsonFileUtil.JsonFileUtil;
 
 import java.io.*;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GsonPostRepositoryImpl implements PostRepository {
@@ -28,59 +27,18 @@ public class GsonPostRepositoryImpl implements PostRepository {
     public GsonPostRepositoryImpl(){}
 
     @Override
-    public Stream<Post> readFromFile(File toReadFrom, Type token) {
-        Stream<Post> resultStream = Stream.empty();
-
-        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(toReadFrom))) {
-            List<Post> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), token);
-            resultStream = buffer.stream();
-        } catch (FileNotFoundException exception) {
-            System.err.println(toReadFrom.getName() + " not found in the next location:\n" +
-                    toReadFrom.getPath());
-            exception.printStackTrace();
-        } catch (IOException exception) {
-            System.err.println("'IOException' during " + toReadFrom.getName() + " read in the next location:\n" +
-                    toReadFrom.getPath());
-            exception.printStackTrace();
-        } catch (JsonSyntaxException exception) {
-            System.err.println("'JsonSyntaxException' during "+ toReadFrom.getName() +" read in the next location:\n" +
-                    toReadFrom.getPath());
-            System.err.println("Check file " + toReadFrom.getName() + " content please");
-            exception.printStackTrace();
-        }
-        return resultStream;
-    }
-
-    @Override
-    public void writeToFile(Stream<Post> incomingTagStream, File toWriteToFile) {
-        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(toWriteToFile))) {
-            List<Post> buffer = incomingTagStream.collect(Collectors.toList());
-            gsonBufferedWriter
-                    .write(
-                            new Gson()
-                                    .toJson(buffer)
-                    );
-
-        } catch (FileNotFoundException exception) {
-            exception.printStackTrace();
-            System.err.println("'FileNotFoundException' during "+toWriteToFile.getName()+" write in the next location:\n" +
-                    toWriteToFile.getPath());
-            System.err.println(toWriteToFile.getName() + " 'writeToFile()' method returns: " + toWriteToFile.canWrite());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("'IOException' during "+toWriteToFile.getName()+" write in the next location:\n" +
-                    toWriteToFile.getPath());
-        }
-    }
-
-    @Override
     public Stream<Post> readDefaultStream() {
-        return readFromFile(file,listTypeToken);
+        return JsonFileUtil.readFromFile(file,listTypeToken);
     }
 
     @Override
     public void writeDefaultStream(Stream<Post> stream) {
-        writeToFile(stream, file);
+        JsonFileUtil.writeToFile(stream, file);
+    }
+
+    @Override
+    public Long getFreeId() {
+        return JsonFileUtil.getFreeId(readDefaultStream());
     }
 
     @Override
@@ -91,6 +49,18 @@ public class GsonPostRepositoryImpl implements PostRepository {
                         Stream.of(p)
                 )
         );
+    }
+
+    @Override
+    public Long add(String subject) {
+        long subjectId = getFreeId();
+        add(
+                new Post(subjectId,
+                        subject,
+                        new ArrayList<Tag>(),
+                        PostStatus.ACTIVE)
+        );
+        return subjectId;
     }
 
     @Override

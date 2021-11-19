@@ -1,8 +1,11 @@
 package model;
 
-import java.util.List;
+import model.interfaces.Entity;
 
-public class Post {
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class Post implements Entity {
     private long id;
     private String content;
     private List<Tag> tags;
@@ -61,5 +64,22 @@ public class Post {
         return "Post [id: " + getId() +", status: " + getStatus().toString() + "\n"+
                 "content:\n" + getContent() +
                 "\ntags:" + tags.toString() + ']';
+    }
+
+    public boolean contain(Tag t1) {
+        return getTags()
+                .stream()
+                .anyMatch( t2 -> t2.getId() ==t1.getId());
+    }
+
+    public void update(Tag t1) {
+        setTags(
+                getTags()
+                .stream()
+                .map(t2 -> {
+                    if (t2.getId() == t1.getId()) return t1;
+                    else return t2;
+        }).collect(Collectors.toList())
+        );
     }
 }

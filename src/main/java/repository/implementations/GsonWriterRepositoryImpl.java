@@ -1,10 +1,12 @@
-package repository;
+package repository.implementations;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import model.Post;
 import model.Writer;
+import repository.interfaces.WriterRepository;
+import repository.jsonFileUtil.JsonFileUtil;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -16,7 +18,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Stream.concat;
 
-public class GsonWriterRepositoryImpl implements WriterRepository{
+public class GsonWriterRepositoryImpl implements WriterRepository {
 
     private static final String fileName = "writers.json";
 
@@ -27,57 +29,21 @@ public class GsonWriterRepositoryImpl implements WriterRepository{
     // Need for return Generic type from string.
     // Always check that this link shall call the 'getType()' method
     private static final Type listTypeToken = new TypeToken<List<Writer>>(){}.getType();
-    @Override
-    public Stream<Writer> readFromFile(File file,Type token){
-        Stream<Writer> resultStream = Stream.empty();
 
-        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(file))) {
-            List<Writer> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), token);
-            resultStream = buffer.stream();
-        } catch (FileNotFoundException exception) {
-            System.err.println(file.getName() + " not found in the next location:\n" +
-                    file.getPath());
-            exception.printStackTrace();
-        } catch (IOException exception) {
-            System.err.println("'IOException' during" + file.getName() + " read in the next location:\n" +
-                    file.getPath());
-            exception.printStackTrace();
-        } catch (JsonSyntaxException exception) {
-            System.err.println("'JsonSyntaxException' during" + file.getName() + " read in the next location:\n" +
-                    file.getPath());
-            exception.printStackTrace();
-        }
-        return resultStream;
-    }
-    @Override
-    public void writeToFile(Stream<Writer> incomingStream, File file){
-        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(file))) {
-            List<Writer> buffer = incomingStream.collect(Collectors.toList());
-            gsonBufferedWriter
-                    .write(
-                            new Gson()
-                                    .toJson(buffer)
-                    );
-        } catch (FileNotFoundException exception) {
-            exception.printStackTrace();
-            System.err.println("'FileNotFoundException' during" + file.getName() + " write in the next location:\n" +
-                    file.getPath());
-            System.err.println(file.getName() +" 'writeToFile()' method returns: " + file.canWrite());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("'IOException' during "+ file.getName() + "write in the next location:\n" +
-                    file.getPath());
-        }
-    };
 
     @Override
     public Stream<Writer> readDefaultStream() {
-        return readFromFile(file,listTypeToken);
+        return JsonFileUtil.readFromFile(file,listTypeToken);
     }
 
     @Override
     public void writeDefaultStream(Stream<Writer> stream) {
-        writeToFile(stream,file);
+        JsonFileUtil.writeToFile(stream, file);
+    }
+
+    @Override
+    public Long getFreeId() {
+        return JsonFileUtil.getFreeId(readDefaultStream());
     }
 
     @Override
@@ -87,6 +53,19 @@ public class GsonWriterRepositoryImpl implements WriterRepository{
                     concat(readDefaultStream(),Stream.of(newWriter))
             );
         }
+    }
+
+    @Override
+    public Long add(String subject) {
+        long subjectId = getFreeId();
+        add(
+                new Writer(
+                        subjectId,
+                        subject,
+                        new ArrayList<Post>()
+                )
+        );
+        return subjectId;
     }
 
     @Override

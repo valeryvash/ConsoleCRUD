@@ -1,6 +1,8 @@
 package model;
 
-public class Tag {
+import model.interfaces.Entity;
+
+public class Tag implements Entity {
     private long id;
     private String name;
 
@@ -31,4 +33,5 @@ public class Tag {
     public String toString() {
         return "Tag [id: " + getId() +", name: " + getName() + "]";
     }
+
 }

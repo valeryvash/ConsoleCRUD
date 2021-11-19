@@ -1,24 +1,22 @@
-package repository;
+package repository.implementations;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import model.Post;
 import model.Tag;
-import model.Writer;
+import repository.interfaces.TagRepository;
+import repository.jsonFileUtil.JsonFileUtil;
 
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Stream.concat;
 
-public class GsonTagRepositoryImpl implements TagRepository{
+public class GsonTagRepositoryImpl implements TagRepository {
 
     private static final String fileName = "tags.json";
 
@@ -30,58 +28,19 @@ public class GsonTagRepositoryImpl implements TagRepository{
     // Always check that this link shall call the 'getType()' method
     private static final Type listTypeToken = new TypeToken<List<Tag>>(){}.getType();
 
-     public Stream<Tag> readFromFile(File toReadFrom, Type token) {
-        Stream<Tag> resultStream = Stream.empty();
-
-        try (BufferedReader gsonBufferedReader = new BufferedReader(new FileReader(toReadFrom))) {
-            List<Tag> buffer = new Gson().fromJson(gsonBufferedReader.readLine(), token);
-            resultStream = buffer.stream();
-        } catch (FileNotFoundException exception) {
-            System.err.println(toReadFrom.getName() + " not found in the next location:\n" +
-                    toReadFrom.getPath());
-            exception.printStackTrace();
-        } catch (IOException exception) {
-            System.err.println("'IOException' during " + toReadFrom.getName() + " read in the next location:\n" +
-                    toReadFrom.getPath());
-            exception.printStackTrace();
-        } catch (JsonSyntaxException exception) {
-            System.err.println("'JsonSyntaxException' during "+ toReadFrom.getName() +" read in the next location:\n" +
-                    toReadFrom.getPath());
-            System.err.println("Check file " + toReadFrom.getName() + " content please");
-            exception.printStackTrace();
-        }
-        return resultStream;
-    }
-
-    public void writeToFile(Stream<Tag> incomingTagStream, File file) {
-        try (BufferedWriter gsonBufferedWriter = new BufferedWriter(new FileWriter(file))) {
-            List<Tag> buffer = incomingTagStream.collect(Collectors.toList());
-            gsonBufferedWriter
-                    .write(
-                            new Gson()
-                                    .toJson(buffer)
-                    );
-
-        } catch (FileNotFoundException exception) {
-            exception.printStackTrace();
-            System.err.println("'FileNotFoundException' during "+file.getName()+" write in the next location:\n" +
-                    file.getPath());
-            System.err.println(file.getName() + " 'writeToFile()' method returns: " + file.canWrite());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("'IOException' during "+file.getName()+" write in the next location:\n" +
-                    file.getPath());
-        }
-    }
-
     @Override
     public Stream<Tag> readDefaultStream() {
-        return readFromFile(file,listTypeToken);
+        return JsonFileUtil.readFromFile(file,listTypeToken);
     }
 
     @Override
     public void writeDefaultStream(Stream<Tag> stream) {
-        writeToFile(stream,file);
+        JsonFileUtil.writeToFile(stream,file);
+    }
+
+    @Override
+    public Long getFreeId() {
+        return JsonFileUtil.getFreeId(readDefaultStream());
     }
 
     @Override
@@ -91,6 +50,13 @@ public class GsonTagRepositoryImpl implements TagRepository{
                     concat(readDefaultStream(),Stream.of(newWriter))
             );
         }
+    }
+
+    @Override
+    public Long add(String subject) {
+        long subjectId = getFreeId();
+        add(new Tag(subjectId, subject));
+        return subjectId;
     }
 
     @Override
@@ -136,8 +102,17 @@ public class GsonTagRepositoryImpl implements TagRepository{
                 .anyMatch(iterableObject -> iterableObject.getId() == id);
     }
 
+    public void delete(Tag t) {
+        delete(t.getId());
+    }
 
-     // class methods tests
+    @Override
+    public boolean contains(String tagName) {
+        return readDefaultStream()
+                .anyMatch(iterableObject -> iterableObject.getName().equals(tagName));
+    }
+
+    // class methods tests
     public static void main(String[] args) {
 
         GsonTagRepositoryImpl gtr = new GsonTagRepositoryImpl();
