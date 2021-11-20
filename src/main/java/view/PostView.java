@@ -75,9 +75,9 @@ public class PostView {
 
         System.out.println("Input content for new post.\n 'q' for quit");
 
-        String s = sc.nextLine().toLowerCase();
+        String s = sc.nextLine();
 
-        if (s.equals("q")) System.exit(0);
+        if (s.equals("q") || s.equals("Q")) System.exit(0);
 
         List<Tag> tagList = getTagList(true);
 

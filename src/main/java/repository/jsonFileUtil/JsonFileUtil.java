@@ -59,18 +59,10 @@ public class JsonFileUtil {
 
     public static <T extends Entity> long getFreeId(Stream<T> readDefaultStream) {
         long result = 0L;
-        long size = readDefaultStream.count();
         Optional<Long> maxId = readDefaultStream.map(T::getId).max(Long::compareTo);
-        if (size != 0) {
             if (maxId.isPresent()) {
-                long last = maxId.get();
-                if (size <= last) {
-                    result = last + 1;
-                } else {
-                    result = size + 1;
-                }
+                result = maxId.get() + 1;
             }
-        }
         return result;
     }
 

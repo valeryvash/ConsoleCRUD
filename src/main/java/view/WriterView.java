@@ -5,7 +5,6 @@ import model.Writer;
 
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class WriterView {
 
@@ -42,7 +41,8 @@ public class WriterView {
             case "5" -> getPostsByWriterName();
             case "6" -> updateNameById();
             case "7" -> updateNameByName();
-            case "8" -> deleteNameById();
+            case "8" -> deleteWriterById();
+            case "9" -> deleteWriterByName();
 
             case "q" -> System.exit(0);
             case "p" -> StartupView.run();
@@ -64,7 +64,7 @@ public class WriterView {
 
         Writer w;
 
-        System.out.println("Input new writer id.\n 'q' for quit");
+        System.out.println("Input new writer name.\n 'q' for quit");
 
         do {
             String s = sc.nextLine();
@@ -85,7 +85,7 @@ public class WriterView {
         } while (true);
 
         wc.add(w);
-        System.out.println("New writer created with id: " + w.getId());
+        System.out.println("New writer created1 with id: " + w.getId());
     }
 
     private static void getAll(){
@@ -132,7 +132,8 @@ public class WriterView {
 
             try {
                 if (!wc.contains(s)) throw new IllegalArgumentException();
-                System.out.println(wc.getByName(s));
+                wc.getWriterPosts(wc.getByName(s).getId()).forEach(System.out::println);
+                break;
             } catch (IllegalArgumentException e) {
                 System.out.println("Such writer doesn't exist! Try another name");
             }
@@ -205,18 +206,16 @@ public class WriterView {
         } while (true);
     }
 
-    private static void deleteNameById() {
+    private static void deleteWriterById() {
         Writer w = getById();
         wc.delete(w.getId());
         System.out.println("Writer deleted");
     }
 
-    private static void deleteNameByName() {
+    private static void deleteWriterByName() {
         Writer w = getByName();
         wc.delete(w.getId());
         System.out.println("Writer deleted");
     }
-
-
 
 }

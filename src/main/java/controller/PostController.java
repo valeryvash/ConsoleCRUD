@@ -63,6 +63,8 @@ public class PostController {
                         tagName
                 ));
 
+        tr.add(t1);
+
         return t1;
     }
 
