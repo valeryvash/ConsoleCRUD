@@ -112,6 +112,14 @@ public class GsonTagRepositoryImpl implements TagRepository {
                 .anyMatch(iterableObject -> iterableObject.getName().equals(tagName));
     }
 
+    @Override
+    public Tag getByName(String tagName) {
+        return readDefaultStream()
+                .filter(t1 -> t1.getName().equalsIgnoreCase(tagName))
+                .findAny()
+                .get();
+    }
+
     // class methods tests
     public static void main(String[] args) {
 

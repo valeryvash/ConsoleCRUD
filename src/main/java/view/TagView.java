@@ -26,10 +26,6 @@ public class TagView {
 
     private static TagController tc = new TagController();
 
-    private static PostController pc = new PostController();
-
-    private static WriterController wc = new WriterController();
-
     public static void run() {
         System.out.println(tagMessage);
         choice();
@@ -57,25 +53,20 @@ public class TagView {
     private static void question() {
         System.out.print("Show 'TagView' again? 'y' for yes\t");
         switch (sc.nextLine().toLowerCase()) {
-            case "y" -> run();
+            case "y" -> TagView.run();
             default -> System.exit(0);
         }
     }
 
-    static void decision(String s){
-        if (s.equals("p")) run();
-        if (s.equals("q")) System.exit(0);
-    }
-
-    private static void createTag() {
+    private static Tag createTag() {
 
         long id = tc.getFreeId();
 
         do {
-            System.out.println("Input new tag name\n 'q' for quit or 'p' for previous menu");
+            System.out.println("Input new tag name\n 'q' for quit");
             String s = sc.nextLine();
 
-            decision(s);
+            if (s.equals("q")) System.exit(0);
 
             if (tc.contains(s)){
                 System.out.println("Already exist. Try another!\n");
@@ -83,7 +74,7 @@ public class TagView {
                 Tag t = new Tag(id, s);
                 tc.add(t);
                 System.out.println("Object with id: " + id + " created");
-                break;
+                return t;
             }
         } while(true);
     }
@@ -94,10 +85,10 @@ public class TagView {
 
     private static Tag getTagById() {
         do {
-            System.out.println("Input existed tag id\n 'q' for quit or 'p' for previous menu");
+            System.out.println("Input existed tag id\n 'q' for quit");
             String s = sc.nextLine();
 
-            decision(s);
+            if (s.equals("q")) System.exit(0);
 
             try {
                 long id = Long.parseLong(s);
@@ -116,10 +107,10 @@ public class TagView {
 
     private static Tag getTagByName() {
         do {
-            System.out.println("Input existed tag name\n 'q' for quit or 'p' for previous menu");
+            System.out.println("Input existed tag name\n 'q' for quit");
             String s = sc.nextLine();
 
-            decision(s);
+            if (s.equals("q")) System.exit(0);
 
                 if (tc.contains(s)){
                     Tag t = tc.getByName(s);
@@ -135,10 +126,10 @@ public class TagView {
         Long id = getTagById().getId();
 
         do {
-            System.out.println("Input new tag name\n 'q' for quit or 'p' for previous menu");
+            System.out.println("Input new tag name\n 'q' for quit");
             String s = sc.nextLine();
 
-            decision(s);
+            if (s.equals("q")) System.exit(0);
 
             if (tc.contains(s)){
                 System.out.println("Already exist. Try another!\n");
@@ -155,10 +146,10 @@ public class TagView {
         Tag t1 = getTagByName();
 
         do {
-            System.out.println("Input new tag name\n 'q' for quit or 'p' for previous menu");
+            System.out.println("Input new tag name\n 'q' for quit");
             String s = sc.nextLine();
 
-            decision(s);
+            if (s.equals("q")) System.exit(0);
 
             if (tc.contains(s)){
                 System.out.println("Already exist. Try another!\n");
@@ -182,8 +173,5 @@ public class TagView {
         tc.delete(t1);
         System.out.println("Object with id: " + t1.getId() + " updated.");
     }
-
-
-
 
 }

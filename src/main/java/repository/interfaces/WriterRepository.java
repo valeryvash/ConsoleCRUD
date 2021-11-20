@@ -1,6 +1,7 @@
 package repository.interfaces;
 
 import model.Post;
+import model.Tag;
 import model.Writer;
 
 import java.util.stream.Stream;
@@ -39,4 +40,12 @@ public interface WriterRepository extends GenericRepository<Writer, Long> {
     boolean contain(String writerName);
 
     Stream<Post> getWriterPosts(Long writerId);
+
+    void update(Tag t1);
+
+    void delete(Tag t1);
+
+    boolean contains(String writerName);
+
+    void delete(Post p1);
 }

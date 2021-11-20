@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import model.Post;
+import model.Tag;
 import model.Writer;
 import repository.interfaces.WriterRepository;
 import repository.jsonFileUtil.JsonFileUtil;
@@ -136,6 +137,52 @@ public class GsonWriterRepositoryImpl implements WriterRepository {
     @Override
     public Stream<Post> getWriterPosts(Long writerId) {
         return getById(writerId).getPosts().stream();
+    }
+
+    @Override
+    public void update(Tag t1) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map(w1 ->{
+                            if (w1.contains(t1)) {
+                                w1.update(t1);
+                            }
+                            return w1;
+                        })
+        );
+    }
+
+    @Override
+    public void delete(Tag t1) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map(w1 -> {
+                            if (w1.contains(t1)) {
+                                w1.delete(t1);
+                            }
+                            return w1;
+                        })
+        );
+    }
+
+    public boolean contains(String writerName) {
+        return readDefaultStream()
+                .anyMatch(w1 -> w1.getName().equalsIgnoreCase(writerName));
+    }
+
+    @Override
+    public void delete(Post p1) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map(w1 ->{
+                            w1.setPosts(
+                                    w1.getPosts().stream()
+                                            .filter(p2 -> p2.getId() != p1.getId())
+                                            .collect(Collectors.toList())
+                            );
+                            return w1;
+                        })
+        );
     }
 
     // class tests

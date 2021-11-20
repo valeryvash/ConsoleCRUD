@@ -34,4 +34,6 @@ public interface TagRepository extends GenericRepository<Tag,Long>{
     boolean contains(Long aLong);
 
     boolean contains(String tagName);
+
+    Tag getByName(String tagName);
 }

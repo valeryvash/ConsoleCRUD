@@ -43,4 +43,7 @@ public interface PostRepository extends GenericRepository<Post,Long>{
 
      Stream<Post> getPostByStatus(PostStatus status);
 
+     void update(Tag t);
+
+     void delete(Tag t);
 }

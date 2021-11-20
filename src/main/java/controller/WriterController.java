@@ -6,6 +6,7 @@ import model.Writer;
 import repository.implementations.GsonWriterRepositoryImpl;
 import repository.interfaces.WriterRepository;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class WriterController {
@@ -48,15 +49,15 @@ public class WriterController {
         return wr.contains(id);
     }
 
-    public void update(Tag t1) {
-        wr.writeDefaultStream(
-                wr.readDefaultStream()
-                        .map(w1 ->{
-                            if (w1.contains(t1)){
-                                w1.update(t1);
-                            }
-                            return w1;
-                        })
-        );
+    public long getFreeId() {
+        return wr.getFreeId();
     }
+
+    public Writer getByName(String name) {
+        return wr.readDefaultStream()
+                .filter(w1 -> w1.getName().equalsIgnoreCase(name))
+                .findAny()
+                .get();
+    }
+
 }

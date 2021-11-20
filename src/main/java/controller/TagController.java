@@ -3,8 +3,10 @@ package controller;
 import model.Tag;
 import repository.implementations.GsonPostRepositoryImpl;
 import repository.implementations.GsonTagRepositoryImpl;
+import repository.implementations.GsonWriterRepositoryImpl;
 import repository.interfaces.PostRepository;
 import repository.interfaces.TagRepository;
+import repository.interfaces.WriterRepository;
 
 import java.util.stream.Stream;
 
@@ -12,9 +14,9 @@ public class TagController{
 
     TagRepository tr = new GsonTagRepositoryImpl();
 
-    PostController pc = new PostController();
+    PostRepository pr = new GsonPostRepositoryImpl();
 
-    WriterController wc = new WriterController();
+    WriterRepository wr = new GsonWriterRepositoryImpl();
 
     public void add(Tag t) {
         tr.add(t);
@@ -42,19 +44,15 @@ public class TagController{
 
     public void update(Tag t) {
         tr.update(t);
-        pc.update(t);
-        wc.update(t);
+        pr.update(t);
+        wr.update(t);
     }
 
     public void delete(Tag t) {
         tr.delete(t.getId());
-        pc.delete(t);
-        wc.delete(t);
+        pr.delete(t);
+        wr.delete(t);
     }
-
-//    public void delete(Long id) {
-//        tr.delete(id);
-//    }
 
     public boolean contains(Long id) {
         return tr.contains(id);

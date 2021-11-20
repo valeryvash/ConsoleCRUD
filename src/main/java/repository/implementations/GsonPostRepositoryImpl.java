@@ -128,22 +128,29 @@ public class GsonPostRepositoryImpl implements PostRepository {
                 .filter(iterableObject -> iterableObject.getStatus() == status);
     }
 
-    void reversePostStatus(Post p) {
+    @Override
+    public void update(Tag t1) {
         writeDefaultStream(
                 readDefaultStream()
-                        .map( iterableObject -> {
-                                if (iterableObject.getId() == p.getId()) {
-                                    if (p.getStatus() == PostStatus.ACTIVE){
-                                        p.setStatus(PostStatus.DELETED);
-                                    } else {
-                                        p.setStatus(PostStatus.ACTIVE);
-                                    }
-                                    return p;
-                                } else {
-                                    return iterableObject;
-                                }
+                        .map(p1 ->{
+                            if (p1.contain(t1)){
+                                p1.update(t1);
                             }
-                        )
+                            return p1;
+                        })
+        );
+    }
+
+    @Override
+    public void delete(Tag t) {
+        writeDefaultStream(
+                readDefaultStream()
+                        .map(p1 ->{
+                            if (p1.contain(t)) {
+                                p1.delete(t);
+                            }
+                            return p1;
+                        })
         );
     }
 

@@ -82,4 +82,13 @@ public class Post implements Entity {
         }).collect(Collectors.toList())
         );
     }
+
+    public void delete(Tag t1) {
+        setTags(
+                getTags()
+                        .stream()
+                        .filter(t2 -> t2.getId() != t1.getId())
+                        .collect(Collectors.toList())
+        );
+    }
 }

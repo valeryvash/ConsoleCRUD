@@ -4,6 +4,7 @@ import model.interfaces.Entity;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Writer implements Entity {
     private long id;
@@ -74,4 +75,43 @@ public class Writer implements Entity {
                         .collect(Collectors.toList())
         );
     }
+
+    public void delete(Tag t1) {
+        setPosts(
+                getPosts()
+                        .stream()
+                        .map(p1 ->{
+                            if(p1.contain(t1)){
+                                p1.delete(t1);
+                            }
+                            return p1;
+                        })
+                        .collect(Collectors.toList())
+        );
+    }
+
+    public void addPost(Post p1) {
+        setPosts(
+                Stream.concat(
+                        getPosts().stream(),
+                        Stream.of(p1)
+                        )
+                        .collect(Collectors.toList())
+        );
+    }
+
+    public void update(Post p1) {
+        setPosts(
+                getPosts().stream()
+                        .map(p2 -> {
+                            if (p2.getId() == p1.getId()) {
+                                return p1;
+                            } else {
+                                return p2;
+                            }
+                        })
+                        .collect(Collectors.toList())
+        );
+    }
+
 }
